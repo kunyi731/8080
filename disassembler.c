@@ -1,10 +1,3 @@
-/*
- *codebuffer is a valid pointer to 8080 assembly code
- pc is the current offset into the code
- 
- returns the number of bytes of the op
-*/
-
 #include <stdio.h>
 #include "disassembler.h"
 
