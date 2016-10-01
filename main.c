@@ -32,8 +32,6 @@ int main (int argc, char**argv)
     printf("%d\n", pc);
 #endif
     pc += Disassemble8080Op(buffer, pc);
-    //pc += 1;
-    
   }
   return 0;
 }

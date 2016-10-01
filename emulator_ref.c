@@ -1,5 +1,3 @@
-#define DBG_REF
-
 #ifdef DBG_REF
 #include "emulator.h"
 #include "disassembler.h"
@@ -33,16 +31,6 @@ void ArithFlagsA(CpuState *state, uint16_t res)
   state->cc.z = ((res&0xff) == 0);
   state->cc.s = (0x80 == (res & 0x80));
   state->cc.p = parity(res&0xff, 8);
-}
-
-void UnimplementedInstruction(CpuState* state)
-{
-  //pc will have advanced one, so undo that
-  printf ("Error: Unimplemented instruction\n");
-  state->pc--;
-  Disassemble8080Op(state->memory, state->pc);
-  printf("\n");
-  exit(1);
 }
 
 int Emulate8080Op_ref(CpuState* state)
@@ -568,30 +556,6 @@ int Emulate8080Op_ref(CpuState* state)
         state->d, state->e, state->h, state->l, state->sp);
 #endif
   return 0;
-}
-
-void ReadFileIntoMemoryAt(CpuState* state, char* filename, uint32_t offset)
-{
-  FILE *f= fopen(filename, "rb");
-  if (f==NULL)
-  {
-    printf("error: Couldn't open %s\n", filename);
-    exit(1);
-  }
-  fseek(f, 0L, SEEK_END);
-  int fsize = ftell(f);
-  fseek(f, 0L, SEEK_SET);
-  
-  uint8_t *buffer = &state->memory[offset];
-  fread(buffer, fsize, 1, f);
-  fclose(f);
-}
-
-CpuState* Init8080(void)
-{
-  CpuState* state = calloc(1,sizeof(CpuState));
-  state->memory = malloc(0x10000);  //16K
-  return state;
 }
 
 #endif

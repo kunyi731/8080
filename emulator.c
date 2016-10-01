@@ -1,7 +1,40 @@
 #include "emulator.h"
 #include "disassembler.h"
 
-#define DBG_REF
+void UnimplementedInstruction(CpuState* state)
+{
+  //pc will have advanced one, so undo that
+  printf ("Error: Unimplemented instruction\n");
+  state->pc--;
+  Disassemble8080Op(state->memory, state->pc);
+  printf("\n");
+  exit(1);
+}
+
+void ReadFileIntoMemoryAt(CpuState* state, char* filename, uint32_t offset)
+{
+  FILE *f= fopen(filename, "rb");
+  if (f==NULL)
+  {
+    printf("error: Couldn't open %s\n", filename);
+    exit(1);
+  }
+  fseek(f, 0L, SEEK_END);
+  int fsize = ftell(f);
+  fseek(f, 0L, SEEK_SET);
+  
+  uint8_t *buffer = &state->memory[offset];
+  fread(buffer, fsize, 1, f);
+  fclose(f);
+}
+
+CpuState* Init8080(void)
+{
+  CpuState* state = calloc(1,sizeof(CpuState));
+  state->memory = malloc(0x10000);  //16K
+  return state;
+}
+
 
 /* Utility functions */
 static inline uint16_t get_offset(CpuState *state)
@@ -957,8 +990,7 @@ void Emulate8080Op(CpuState* state)
       break;
 
     case 0xcd: //CALL ADDR
-#define FOR_CPUDIAG
-   #ifdef FOR_CPUDIAG    
+ #ifdef DBG_TEST  
             if (5 ==  ((opcode[2] << 8) | opcode[1]))    
             {    
                 if (state->c == 9)    
@@ -967,12 +999,13 @@ void Emulate8080Op(CpuState* state)
                     char *str = &state->memory[offset+3];  //skip the prefix bytes    
                     while (*str != '$')    
                         printf("%c", *str++);    
+                    
                     printf("\n");    
                 }    
                 else if (state->c == 2)    
                 {    
-                    //saw this in the inspected code, never saw it called    
-                    printf ("print char routine called\n");    
+                    //printf ("print char routine called\n");
+										printf("%c", state->e);
                 }    
             }    
             else if (0 ==  ((opcode[2] << 8) | opcode[1]))    
@@ -980,7 +1013,7 @@ void Emulate8080Op(CpuState* state)
                 exit(0);    
             }    
             else    
-   #endif 
+ #endif 
       {
       uint16_t ret = state->pc + 2;
       state->memory[state->sp - 1] = (ret >> 8) & 0xff;

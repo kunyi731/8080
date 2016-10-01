@@ -3,8 +3,6 @@
 
 #include "emulator.h"
 
-//#define DBG_REF
-
 int main (int argc, char** argv)
 {
   FILE *f = fopen(argv[1], "rb");
@@ -28,35 +26,39 @@ int main (int argc, char** argv)
   int done = 0;
   int vblankcycles = 0;
   CpuState* state = Init8080();
- // ReadFileIntoMemoryAt(state, "invaders.h", 0);
- // ReadFileIntoMemoryAt(state, "invaders.g", 0x800);
- // ReadFileIntoMemoryAt(state, "invaders.f", 0x1000);
- // ReadFileIntoMemoryAt(state, "invaders.e", 0x1800);
-  
+#ifdef DBG_TEST 
+  ReadFileIntoMemoryAt(state, "cpudiag.bin", 0x100);
+
+  //Fix the first instruction to be JMP 0x100    
+  state->memory[0]=0xc3;    
+  state->memory[1]=0;    
+  state->memory[2]=0x01;    
+
+  //Fix the stack pointer from 0x6ad to 0x7ad    
+  // this 0x06 byte 112 in the code, which is    
+  // byte 112 + 0x100 = 368 in memory    
+  state->memory[368] = 0x7;    
+
+  //Skip DAA test    
+  state->memory[0x59c] = 0xc3; //JMP    
+  state->memory[0x59d] = 0xc2;    
+  state->memory[0x59e] = 0x05;
+#else
+  ReadFileIntoMemoryAt(state, "invaders.h", 0);
+  ReadFileIntoMemoryAt(state, "invaders.g", 0x800);
+  ReadFileIntoMemoryAt(state, "invaders.f", 0x1000);
+  ReadFileIntoMemoryAt(state, "invaders.e", 0x1800);
+#endif
+
+#ifdef DBG_REF
   CpuState* state_ref = Init8080();
   ReadFileIntoMemoryAt(state_ref, "invaders.h", 0);
   ReadFileIntoMemoryAt(state_ref, "invaders.g", 0x800);
   ReadFileIntoMemoryAt(state_ref, "invaders.f", 0x1000);
   ReadFileIntoMemoryAt(state_ref, "invaders.e", 0x1800);
- 
-    ReadFileIntoMemoryAt(state, "cpudiag.bin", 0x100);
+#endif
 
-    //Fix the first instruction to be JMP 0x100    
-    state->memory[0]=0xc3;    
-    state->memory[1]=0;    
-    state->memory[2]=0x01;    
-
-    //Fix the stack pointer from 0x6ad to 0x7ad    
-    // this 0x06 byte 112 in the code, which is    
-    // byte 112 + 0x100 = 368 in memory    
-    state->memory[368] = 0x7;    
-
-    //Skip DAA test    
-    state->memory[0x59c] = 0xc3; //JMP    
-    state->memory[0x59d] = 0xc2;    
-    state->memory[0x59e] = 0x05;    
-
-  while (done == 0)
+  while (1)
   {
     Emulate8080Op(state);
 #ifdef DBG_REF
@@ -65,7 +67,6 @@ int main (int argc, char** argv)
     {
       return 1;
     }
-#else
 #endif
   }
   return 0;
